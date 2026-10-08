@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML & CSS Speed Matching Game</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --border: #cbd5e1;
+      --selected: #3b82f6;
+      --correct: #22c55e;
+      --incorrect: #ef4444;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    p.subtitle {
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    .topic-selector {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .topic-btn {
+      background-color: #e2e8f0;
+      color: #334155;
+      border: none;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .topic-btn.active {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .game-container {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    @media (max-width: 768px) {
+      .game-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .column-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      display: flex;
+      align-items: center;
+      min-height: 52px;
+    }
+
+    .card:hover:not(.matched):not(.selected) {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .card.selected {
+      border-color: var(--selected);
+      background-color: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    .card.correct {
+      border-color: var(--correct);
+      background-color: #f0fdf4;
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    .card.incorrect {
+      border-color: var(--incorrect);
+      background-color: #fef2f2;
+      animation: shake 0.3s ease-in-out;
+    }
+
+    .card.matched {
+      opacity: 0.35;
+      cursor: default;
+      border-color: #e2e8f0;
+      background-color: #f1f5f9;
+      box-shadow: none;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      color: #1e293b;
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+
+    .modal p {
+      color: #64748b;
+      margin-bottom: 20px;
+      font-size: 1.05rem;
+    }
+
+    .modal .final-time {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 10px 0 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="game-title">Strand 2 HTML: Speed Matching Game</h1>
+    <p class="subtitle">Match each term on the left with its simplified definition on the right!</p>
+    <div class="topic-selector">
+      <button class="topic-btn active" id="btn-html">Strand 2: HTML</button>
+      <button class="topic-btn" id="btn-css">Strand 3: CSS</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-label">Timer</span>
+      <span class="stat-value" id="timer">00:00.0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Matches</span>
+      <span class="stat-value" id="matches-count">0 / 0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Attempts</span>
+      <span class="stat-value" id="attempts-count">0</span>
+    </div>
+    <button class="btn" id="restart-btn">Reset Game</button>
+  </div>
+
+  <div class="game-container">
+    <div class="column" id="terms-column">
+      <div class="column-header">Terms</div>
+    </div>
+    <div class="column" id="definitions-column">
+      <div class="column-header">Definitions</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="win-modal">
+    <div class="modal">
+      <h2>🎉 Awesome Job!</h2>
+      <p>You matched all terms in:</p>
+      <div class="final-time" id="final-time-display">00:00.0</div>
+      <p id="accuracy-display">Attempts: 0</p>
+      <button class="btn" id="play-again-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const htmlData = [
+      { id: 1, term: "HTML", def: "The standard coding language used to structure and format text on webpages." },
+      { id: 2, term: "Semantic Elements", def: "Tags that clearly describe their meaning and content to browsers and developers." },
+      { id: 3, term: "Non-Semantic Elements", def: "Tags that give no information about the content inside them." },
+      { id: 4, term: "Validation (W3C)", def: "Checking webpage code to ensure it meets official web organization standards." },
+      { id: 5, term: "Elements", def: "Everything from the opening start tag to the closing end tag." },
+      { id: 6, term: "Attributes", def: "Extra information added inside an HTML tag as name/value pairs." },
+      { id: 7, term: "Tags", def: "Code enclosed in angle brackets < > that defines elements and attributes." },
+      { id: 8, term: "Block Level Elements", def: "HTML elements that always start on a new line and can contain other code." },
+      { id: 9, term: "Inline Level Elements", def: "HTML elements that stay on the same line and take up only necessary width." },
+      { id: 10, term: "Relative Links", def: "Link addresses referencing files stored inside the same server folder without a protocol." },
+      { id: 11, term: "Absolute Links", def: "Full internet addresses starting with a protocol like http: or https:." },
+      { id: 12, term: "Meta Elements", def: "Tags placed in the head section containing background information about the webpage." },
+      { id: 13, term: "Character Entities", def: "Special codes used to safely display reserved characters like & or <." },
+      { id: 14, term: "Keywords", def: "Words or phrases that describe content for search engines and metadata." },
+      { id: 15, term: "Viewport", def: "The visible area of a webpage on a user's screen or device." }
+    ];
+
+    const cssData = [
+      { id: 101, term: "CSS", def: "Code used to control text, colors, backgrounds, borders, spacing, and layout on a website." },
+      { id: 102, term: "Inline Style", def: "Style code written directly inside a single HTML tag to change just that item." },
+      { id: 103, term: "Internal Style", def: "CSS rules written in the head section of a single webpage." },
+      { id: 104, term: "External Style", def: "A separate CSS file linked to control styling across an entire website." },
+      { id: 105, term: "Cascade Order", def: "Priority rules deciding which style rule wins when conflicting styles exist." },
+      { id: 106, term: "Best Coding Practice", def: "Community guidelines for writing clean, readable, and maintainable code." }
+    ];
+
+    let currentDataset = htmlData;
+    let selectedTerm = null;
+    let selectedDef = null;
+    let matchedCount = 0;
+    let attemptsCount = 0;
+    let timerInterval = null;
+    let startTime = null;
+    let elapsedTime = 0;
+    let gameStarted = false;
+
+    const termsColumn = document.getElementById("terms-column");
+    const defsColumn = document.getElementById("definitions-column");
+    const timerDisplay = document.getElementById("timer");
+    const matchesDisplay = document.getElementById("matches-count");
+    const attemptsDisplay = document.getElementById("attempts-count");
+    const restartBtn = document.getElementById("restart-btn");
+    const winModal = document.getElementById("win-modal");
+    const finalTimeDisplay = document.getElementById("final-time-display");
+    const accuracyDisplay = document.getElementById("accuracy-display");
+    const playAgainBtn = document.getElementById("play-again-btn");
+    const btnHtml = document.getElementById("btn-html");
+    const btnCss = document.getElementById("btn-css");
+    const gameTitle = document.getElementById("game-title");
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const tenths = Math.floor((ms % 1000) / 100);
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
+    }
+
+    function startTimer() {
+      if (!gameStarted) {
+        gameStarted = true;
+        startTime = Date.now() - elapsedTime;
+        timerInterval = setInterval(() => {
+          elapsedTime = Date.now() - startTime;
+          timerDisplay.textContent = formatTime(elapsedTime);
+        }, 100);
+      }
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      gameStarted = false;
+    }
+
+    function resetTimer() {
+      stopTimer();
+      elapsedTime = 0;
+      timerDisplay.textContent = "00:00.0";
+    }
+
+    function initGame() {
+      resetTimer();
+      selectedTerm = null;
+      selectedDef = null;
+      matchedCount = 0;
+      attemptsCount = 0;
+      matchesDisplay.textContent = `0 / ${currentDataset.length}`;
+      attemptsDisplay.textContent = "0";
+      winModal.classList.remove("active");
+
+      termsColumn.querySelectorAll(".card").forEach(c => c.remove());
+      defsColumn.querySelectorAll(".card").forEach(c => c.remove());
+
+      const shuffledTerms = shuffle(currentDataset);
+      const shuffledDefs = shuffle(currentDataset);
+
+      shuffledTerms.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.id = item.id;
+        card.textContent = item.term;
+        card.addEventListener("click", () => handleTermClick(card));
+        termsColumn.appendChild(card);
+      });
+
+      shuffledDefs.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.id = item.id;
+        card.textContent = item.def;
+        card.addEventListener("click", () => handleDefClick(card));
+        defsColumn.appendChild(card);
+      });
+    }
+
+    function handleTermClick(card) {
+      if (card.classList.contains("matched")) return;
+      startTimer();
+
+      if (selectedTerm) {
+        selectedTerm.classList.remove("selected");
+      }
+
+      selectedTerm = card;
+      selectedTerm.classList.add("selected");
+
+      checkMatch();
+    }
+
+    function handleDefClick(card) {
+      if (card.classList.contains("matched")) return;
+      startTimer();
+
+      if (selectedDef) {
+        selectedDef.classList.remove("selected");
+      }
+
+      selectedDef = card;
+      selectedDef.classList.add("selected");
+
+      checkMatch();
+    }
+
+    function checkMatch() {
+      if (!selectedTerm || !selectedDef) return;
+
+      attemptsCount++;
+      attemptsDisplay.textContent = attemptsCount;
+
+      const termId = selectedTerm.dataset.id;
+      const defId = selectedDef.dataset.id;
+
+      if (termId === defId) {
+        const termCard = selectedTerm;
+        const defCard = selectedDef;
+
+        termCard.classList.remove("selected");
+        defCard.classList.remove("selected");
+
+        termCard.classList.add("correct");
+        defCard.classList.add("correct");
+
+        setTimeout(() => {
+          termCard.classList.remove("correct");
+          defCard.classList.remove("correct");
+          termCard.classList.add("matched");
+          defCard.classList.add("matched");
+        }, 300);
+
+        matchedCount++;
+        matchesDisplay.textContent = `${matchedCount} / ${currentDataset.length}`;
+
+        selectedTerm = null;
+        selectedDef = null;
+
+        if (matchedCount === currentDataset.length) {
+          stopTimer();
+          setTimeout(showWinModal, 500);
+        }
+      } else {
+        const termCard = selectedTerm;
+        const defCard = selectedDef;
+
+        termCard.classList.add("incorrect");
+        defCard.classList.add("incorrect");
+
+        selectedTerm = null;
+        selectedDef = null;
+
+        setTimeout(() => {
+          termCard.classList.remove("selected", "incorrect");
+          defCard.classList.remove("selected", "incorrect");
+        }, 500);
+      }
+    }
+
+    function showWinModal() {
+      finalTimeDisplay.textContent = formatTime(elapsedTime);
+      accuracyDisplay.textContent = `Completed in ${attemptsCount} attempts!`;
+      winModal.classList.add("active");
+    }
+
+    btnHtml.addEventListener("click", () => {
+      btnHtml.classList.add("active");
+      btnCss.classList.remove("active");
+      currentDataset = htmlData;
+      gameTitle.textContent = "Strand 2 HTML: Speed Matching Game";
+      initGame();
+    });
+
+    btnCss.addEventListener("click", () => {
+      btnCss.classList.add("active");
+      btnHtml.classList.remove("active");
+      currentDataset = cssData;
+      gameTitle.textContent = "Strand 3 CSS: Speed Matching Game";
+      initGame();
+    });
+
+    restartBtn.addEventListener("click", initGame);
+    playAgainBtn.addEventListener("click", initGame);
+
+    initGame();
+  </script>
+</body>
+</html>
